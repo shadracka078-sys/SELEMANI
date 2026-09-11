@@ -1,0 +1,6 @@
+{
+  "name": "Wakala Mobile Money",
+  "description": "Wakala Mobile Money agency management app for tracking deposits, withdrawals, cash in drawer, float balances across M-Pesa, Airtel Money, and Tigo Pesa, with daily balance closing reconciliation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
