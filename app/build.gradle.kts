@@ -39,12 +39,18 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")
     
+    // Lifecycle Compose (kwa ajili ya collectAsStateWithLifecycle)
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
+    
     val composeBom = platform("androidx.compose:compose-bom:2024.02.02")
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+
+    // Material Icons Extended (kwa ajili ya icons za AccountBalance, ReceiptLong, Payments, nk)
+    implementation("androidx.compose.material:material-icons-extended")
 
     // Firebase Libraries
     implementation(platform("com.google.firebase:firebase-bom:32.8.0"))
