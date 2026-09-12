@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "91124491420",
+    "project_id": "selemani-wakala",
+    "storage_bucket": "selemani-wakala.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:91124491420:android:18c35aed38a29a2c4ab959",
+        "android_client_info": {
+          "package_name": "WAKALA.APP"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCju0uF1spmywk1_47pbHclqaOYDhXYETg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
