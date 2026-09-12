@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.*
 import com.google.firebase.FirebaseApp
 
 class MainActivity : ComponentActivity() {
@@ -13,23 +14,31 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         
         try {
-            // Anzisha Firebase kwa usalama kabla ya kufungua screen
             FirebaseApp.initializeApp(this)
             
             setContent {
                 MaterialTheme {
                     Surface {
-                        AuthScreen(
-                            onAuthSuccess = {
-                                Toast.makeText(this, "Login Imefanikiwa!", Toast.LENGTH_SHORT).show()
-                            }
-                        )
+                        // Variable ya kuangalia kama mtumiaji ameingia (logged in)
+                        var isLoggedIn by remember { mutableStateOf(false) }
+
+                        if (isLoggedIn) {
+                            // Onyesha Skrini ya Kuu/Dashboard baada ya Login
+                            AdminDashboardScreen() 
+                        } else {
+                            // Onyesha Skrini ya Login
+                            AuthScreen(
+                                onAuthSuccess = {
+                                    Toast.makeText(this@MainActivity, "Login Imefanikiwa!", Toast.LENGTH_SHORT).show()
+                                    isLoggedIn = true // Hii inahamisha skrini kwenda mbele
+                                }
+                            )
+                        }
                     }
                 }
             }
         } catch (e: Exception) {
-            // Kama kuna kosa badala ya app kuzima, itaonyesha ujumbe huu
-            Toast.makeText(this, "Kosa la kuanza: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Hitilafu: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
         }
     }
 }
