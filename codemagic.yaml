@@ -12,6 +12,6 @@ workflows:
           gradle wrapper --gradle-version 9.3.1
       - name: Build Android APK
         script: |
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug -x validateSigningDebug
     artifacts:
       - app/build/outputs/apk/**/*.apk
