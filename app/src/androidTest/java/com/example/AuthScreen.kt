@@ -39,7 +39,7 @@ fun AuthScreen(
             Text(
                 text = when (mode) {
                     AuthMode.LOGIN -> "SELEMANI WAKALA - LOGIN"
-                    AuthMode.SIGN_UP -> "AJILI WAKALA MPYA (SIGN UP)"
+                    AuthMode.SIGN_UP -> "SAJILI AKAUNTI MPYA"
                     AuthMode.FORGOT_PASSWORD -> "REJESHA NENOSIRI"
                 },
                 style = MaterialTheme.typography.titleMedium,
@@ -76,7 +76,7 @@ fun AuthScreen(
                 Button(
                     onClick = {
                         if (email.isBlank()) {
-                            Toast.makeText(context, "Tafadhali weka Email", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Weka Email tafadhali", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
 
@@ -86,7 +86,6 @@ fun AuthScreen(
                                 auth.signInWithEmailAndPassword(email, password)
                                     .addOnSuccessListener {
                                         isLoading = false
-                                        Toast.makeText(context, "Umeingia salama!", Toast.LENGTH_SHORT).show()
                                         onAuthSuccess()
                                     }
                                     .addOnFailureListener { e ->
@@ -110,7 +109,7 @@ fun AuthScreen(
                                 auth.sendPasswordResetEmail(email)
                                     .addOnSuccessListener {
                                         isLoading = false
-                                        Toast.makeText(context, "Link ya kubadili password imetumwa kwenye Email yako!", Toast.LENGTH_LONG).show()
+                                        Toast.makeText(context, "Link ya reset imetumwa kwenye email!", Toast.LENGTH_LONG).show()
                                         mode = AuthMode.LOGIN
                                     }
                                     .addOnFailureListener { e ->
@@ -126,7 +125,7 @@ fun AuthScreen(
                         text = when (mode) {
                             AuthMode.LOGIN -> "Ingia (Log In)"
                             AuthMode.SIGN_UP -> "Sajili Akaunti"
-                            AuthMode.FORGOT_PASSWORD -> "Tuma Link ya Password"
+                            AuthMode.FORGOT_PASSWORD -> "Tuma Link"
                         }
                     )
                 }
@@ -134,7 +133,6 @@ fun AuthScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Tumia chaguzi hizi kubadilisha kati ya Login, Sign Up na Forgot Password
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -148,7 +146,7 @@ fun AuthScreen(
                     }
                 } else {
                     TextButton(onClick = { mode = AuthMode.LOGIN }) {
-                        Text("Rudi Kuingia (Log In)")
+                        Text("Rudi Kuingia")
                     }
                 }
             }
