@@ -19,18 +19,21 @@ class MainActivity : ComponentActivity() {
             setContent {
                 MaterialTheme {
                     Surface {
-                        // Variable ya kuangalia kama mtumiaji ameingia (logged in)
                         var isLoggedIn by remember { mutableStateOf(false) }
 
                         if (isLoggedIn) {
-                            // Onyesha Skrini ya Kuu/Dashboard baada ya Login
-                            AdminDashboardScreen() 
+                            // Tumeweka 'onLogout' hapa ili kuondoa kosa la build
+                            AdminDashboardScreen(
+                                onLogout = {
+                                    isLoggedIn = false
+                                    Toast.makeText(this@MainActivity, "Umetoka kwenye akaunti", Toast.LENGTH_SHORT).show()
+                                }
+                            )
                         } else {
-                            // Onyesha Skrini ya Login
                             AuthScreen(
                                 onAuthSuccess = {
                                     Toast.makeText(this@MainActivity, "Login Imefanikiwa!", Toast.LENGTH_SHORT).show()
-                                    isLoggedIn = true // Hii inahamisha skrini kwenda mbele
+                                    isLoggedIn = true
                                 }
                             )
                         }
