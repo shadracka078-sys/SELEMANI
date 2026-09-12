@@ -7,6 +7,7 @@ import com.example.data.model.FloatBalanceEntity
 import com.example.data.model.NetworkType
 import com.example.data.model.TransactionEntity
 import com.example.data.model.TransactionType
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -14,7 +15,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class WakalaRepository(private val wakalaDao: WakalaDao) {
+class WakalaRepository(
+    private val wakalaDao: WakalaDao,
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+) {
 
     val allTransactions: Flow<List<TransactionEntity>> = wakalaDao.getAllTransactions()
     val allFloats: Flow<List<FloatBalanceEntity>> = wakalaDao.getAllFloats()
@@ -27,7 +31,6 @@ class WakalaRepository(private val wakalaDao: WakalaDao) {
     suspend fun initializeDefaultDataIfEmpty() = withContext(Dispatchers.IO) {
         val currentDrawer = wakalaDao.getCashDrawer()
         if (currentDrawer == null) {
-            // Seed Cash in Drawer
             val initialCash = 450000.0
             wakalaDao.insertOrUpdateCashDrawer(
                 CashDrawerEntity(
@@ -39,7 +42,6 @@ class WakalaRepository(private val wakalaDao: WakalaDao) {
                 )
             )
 
-            // Seed Initial Floats for all networks
             val initialFloats = listOf(
                 FloatBalanceEntity(NetworkType.M_PESA, currentBalance = 650000.0, openingBalance = 650000.0, lowBalanceThreshold = 100000.0),
                 FloatBalanceEntity(NetworkType.AIRTEL_MONEY, currentBalance = 400000.0, openingBalance = 400000.0, lowBalanceThreshold = 80000.0),
@@ -48,7 +50,6 @@ class WakalaRepository(private val wakalaDao: WakalaDao) {
             )
             wakalaDao.insertAllFloats(initialFloats)
 
-            // Seed a few realistic initial transactions for today
             val todayStr = getTodayDateString()
             val now = System.currentTimeMillis()
 
@@ -91,14 +92,15 @@ class WakalaRepository(private val wakalaDao: WakalaDao) {
                 )
             )
 
-            // Adjust the drawer and float for the seeded transactions
             var cash = initialCash
             var mpesa = 650000.0
             var airtel = 400000.0
             var tigo = 350000.0
 
             for (tx in seedTransactions) {
-                wakalaDao.insertTransaction(tx)
+                val id = wakalaDao.insertTransaction(tx)
+                syncTransactionToFirestore(tx.copy(id = id))
+
                 when (tx.type) {
                     TransactionType.DEPOSIT -> {
                         cash += tx.amount
@@ -117,6 +119,12 @@ class WakalaRepository(private val wakalaDao: WakalaDao) {
             wakalaDao.updateFloatBalance(NetworkType.M_PESA, mpesa)
             wakalaDao.updateFloatBalance(NetworkType.AIRTEL_MONEY, airtel)
             wakalaDao.updateFloatBalance(NetworkType.TIGO_PESA, tigo)
+
+            syncBalancesToFirestore(cash, mapOf(
+                NetworkType.M_PESA to mpesa,
+                NetworkType.AIRTEL_MONEY to airtel,
+                NetworkType.TIGO_PESA to tigo
+            ))
         }
     }
 
@@ -141,35 +149,25 @@ class WakalaRepository(private val wakalaDao: WakalaDao) {
 
             when (type) {
                 TransactionType.DEPOSIT -> {
-                    // Customer pays cash -> Agent receives Cash into drawer (+Cash)
-                    // Agent sends float from SIM to customer's phone (-Float)
                     updatedCash += amount
                     updatedFloat -= amount
                 }
                 TransactionType.WITHDRAWAL -> {
-                    // Customer sends float from phone to Agent till (+Float)
-                    // Agent gives physical cash to customer (-Cash)
                     updatedCash -= amount
                     updatedFloat += amount
                 }
                 TransactionType.BUY_FLOAT -> {
-                    // Wakala purchases float using cash from drawer or bank
-                    // Agent pays cash (-Cash), Agent receives float (+Float)
                     updatedCash -= amount
                     updatedFloat += amount
                 }
                 TransactionType.SELL_FLOAT -> {
-                    // Wakala converts excess float back into cash
-                    // Agent receives cash (+Cash), Agent gives/transfers float (-Float)
                     updatedCash += amount
                     updatedFloat -= amount
                 }
                 TransactionType.EXPENSE -> {
-                    // Operational expense paid from drawer cash
                     updatedCash -= amount
                 }
                 TransactionType.COMMISSION -> {
-                    // Commission earned
                     if (network != null) {
                         updatedFloat += (commission.takeIf { it > 0 } ?: amount)
                     } else {
@@ -178,7 +176,6 @@ class WakalaRepository(private val wakalaDao: WakalaDao) {
                 }
             }
 
-            // Save transaction record
             val tx = TransactionEntity(
                 type = type,
                 network = network,
@@ -193,11 +190,15 @@ class WakalaRepository(private val wakalaDao: WakalaDao) {
             )
             val txId = wakalaDao.insertTransaction(tx)
 
-            // Update drawer and float
             wakalaDao.updateCashDrawer(updatedCash)
             if (network != null && type != TransactionType.EXPENSE) {
                 wakalaDao.updateFloatBalance(targetNetwork, updatedFloat)
             }
+
+            // Sync transaction & balances to Firestore
+            val savedTx = tx.copy(id = txId)
+            syncTransactionToFirestore(savedTx)
+            syncBalancesToFirestore(updatedCash, mapOf(targetNetwork to updatedFloat))
 
             Result.success(txId)
         } catch (e: Exception) {
@@ -207,10 +208,12 @@ class WakalaRepository(private val wakalaDao: WakalaDao) {
 
     suspend fun updateFloatBalanceDirectly(network: NetworkType, newBalance: Double) = withContext(Dispatchers.IO) {
         wakalaDao.updateFloatBalance(network, newBalance)
+        syncBalancesToFirestore(null, mapOf(network to newBalance))
     }
 
     suspend fun updateCashDrawerDirectly(newCash: Double) = withContext(Dispatchers.IO) {
         wakalaDao.updateCashDrawer(newCash)
+        syncBalancesToFirestore(newCash, emptyMap())
     }
 
     suspend fun resetDrawerAndFloatsToOpening() = withContext(Dispatchers.IO) {
@@ -220,15 +223,13 @@ class WakalaRepository(private val wakalaDao: WakalaDao) {
 
     suspend fun saveDailyClosing(closing: DailyClosingEntity) = withContext(Dispatchers.IO) {
         wakalaDao.insertDailyClosing(closing)
-        
-        // After successfully closing, set the actual counts as the new opening balances for the next day
+
         wakalaDao.updateCashDrawer(closing.actualCash)
         wakalaDao.updateFloatBalance(NetworkType.M_PESA, closing.mpesaActual)
         wakalaDao.updateFloatBalance(NetworkType.AIRTEL_MONEY, closing.airtelActual)
         wakalaDao.updateFloatBalance(NetworkType.TIGO_PESA, closing.tigoActual)
         wakalaDao.updateFloatBalance(NetworkType.HALOPESA, closing.halopesaActual)
 
-        // Set opening balances equal to these new current balances
         val currentDrawer = wakalaDao.getCashDrawer()
         if (currentDrawer != null) {
             wakalaDao.insertOrUpdateCashDrawer(
@@ -254,10 +255,14 @@ class WakalaRepository(private val wakalaDao: WakalaDao) {
                 )
             }
         }
+
+        // Sync closing data to Firestore
+        firestore.collection("daily_closings")
+            .document(closing.dateString)
+            .set(closing)
     }
 
     suspend fun deleteTransaction(tx: TransactionEntity) = withContext(Dispatchers.IO) {
-        // Reverse transaction effect on balances
         val drawer = wakalaDao.getCashDrawer()
         if (drawer != null) {
             var revCash = drawer.currentCash
@@ -289,6 +294,45 @@ class WakalaRepository(private val wakalaDao: WakalaDao) {
         }
 
         wakalaDao.deleteTransaction(tx.id)
+
+        // Delete from Firestore
+        firestore.collection("transactions")
+            .document(tx.id.toString())
+            .delete()
+    }
+
+    // --- Firestore Helper Functions ---
+
+    private fun syncTransactionToFirestore(tx: TransactionEntity) {
+        val txData = hashMapOf(
+            "id" to tx.id,
+            "type" to tx.type.name,
+            "network" to tx.network?.name,
+            "amount" to tx.amount,
+            "commission" to tx.commission,
+            "customerPhone" to tx.customerPhone,
+            "customerName" to tx.customerName,
+            "referenceNumber" to tx.referenceNumber,
+            "notes" to tx.notes,
+            "timestamp" to tx.timestamp,
+            "dateString" to tx.dateString
+        )
+        firestore.collection("transactions")
+            .document(tx.id.toString())
+            .set(txData)
+    }
+
+    private fun syncBalancesToFirestore(cash: Double?, floats: Map<NetworkType, Double>) {
+        if (cash != null) {
+            firestore.collection("balances")
+                .document("cash_drawer")
+                .set(mapOf("currentCash" to cash, "updatedAt" to System.currentTimeMillis()))
+        }
+        for ((net, bal) in floats) {
+            firestore.collection("balances")
+                .document(net.name)
+                .set(mapOf("currentBalance" to bal, "updatedAt" to System.currentTimeMillis()))
+        }
     }
 
     companion object {
