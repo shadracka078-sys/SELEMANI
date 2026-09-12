@@ -7,9 +7,9 @@ workflows:
       - name: Set Android SDK
         script: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-      - name: Make Gradle Wrapper Executable
+      - name: Generate Gradle Wrapper
         script: |
-          chmod +x gradlew
+          gradle wrapper --gradle-version 8.5
       - name: Build Android APK
         script: |
           ./gradlew assembleDebug
