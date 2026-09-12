@@ -50,7 +50,7 @@ fun AuthScreen(
 
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = { email = it.trim() },
                 label = { Text("Barua Pepe (Email)") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -75,48 +75,66 @@ fun AuthScreen(
             } else {
                 Button(
                     onClick = {
+                        // VALIDATION: Zuia crash kama mtumiaji hajaweka email au password
                         if (email.isBlank()) {
-                            Toast.makeText(context, "Weka Email tafadhali", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Tafadhali weka Email yako", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        if (mode != AuthMode.FORGOT_PASSWORD && password.isBlank()) {
+                            Toast.makeText(context, "Tafadhali weka Password yako", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        if (mode == AuthMode.SIGN_UP && password.length < 6) {
+                            Toast.makeText(context, "Password lazima iwe na angalau herufi 6", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
 
                         isLoading = true
-                        when (mode) {
-                            AuthMode.LOGIN -> {
-                                auth.signInWithEmailAndPassword(email, password)
-                                    .addOnSuccessListener {
-                                        isLoading = false
-                                        onAuthSuccess()
-                                    }
-                                    .addOnFailureListener { e ->
-                                        isLoading = false
-                                        Toast.makeText(context, "Kosa: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                                    }
+                        
+                        try {
+                            when (mode) {
+                                AuthMode.LOGIN -> {
+                                    auth.signInWithEmailAndPassword(email, password)
+                                        .addOnSuccessListener {
+                                            isLoading = false
+                                            onAuthSuccess()
+                                        }
+                                        .addOnFailureListener { e ->
+                                            isLoading = false
+                                            Toast.makeText(context, "Kosa la Login: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                        }
+                                }
+                                AuthMode.SIGN_UP -> {
+                                    auth.createUserWithEmailAndPassword(email, password)
+                                        .addOnSuccessListener {
+                                            isLoading = false
+                                            Toast.makeText(context, "Akaunti imetengenezwa!", Toast.LENGTH_SHORT).show()
+                                            onAuthSuccess()
+                                        }
+                                        .addOnFailureListener { e ->
+                                            isLoading = false
+                                            Toast.makeText(context, "Kosa la Usajili: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                        }
+                                }
+                                AuthMode.FORGOT_PASSWORD -> {
+                                    auth.sendPasswordResetEmail(email)
+                                        .addOnSuccessListener {
+                                            isLoading = false
+                                            Toast.makeText(context, "Link ya reset imetumwa kwenye email!", Toast.LENGTH_LONG).show()
+                                            mode = AuthMode.LOGIN
+                                        }
+                                        .addOnFailureListener { e ->
+                                            isLoading = false
+                                            Toast.makeText(context, "Kosa: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                        }
+                                }
                             }
-                            AuthMode.SIGN_UP -> {
-                                auth.createUserWithEmailAndPassword(email, password)
-                                    .addOnSuccessListener {
-                                        isLoading = false
-                                        Toast.makeText(context, "Akaunti imetengenezwa!", Toast.LENGTH_SHORT).show()
-                                        onAuthSuccess()
-                                    }
-                                    .addOnFailureListener { e ->
-                                        isLoading = false
-                                        Toast.makeText(context, "Kosa: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                                    }
-                            }
-                            AuthMode.FORGOT_PASSWORD -> {
-                                auth.sendPasswordResetEmail(email)
-                                    .addOnSuccessListener {
-                                        isLoading = false
-                                        Toast.makeText(context, "Link ya reset imetumwa kwenye email!", Toast.LENGTH_LONG).show()
-                                        mode = AuthMode.LOGIN
-                                    }
-                                    .addOnFailureListener { e ->
-                                        isLoading = false
-                                        Toast.makeText(context, "Kosa: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                                    }
-                            }
+                        } catch (e: Exception) {
+                            // Inazuia app kucrash endapo hitilafu isiyotarajiwa itatokea
+                            isLoading = false
+                            Toast.makeText(context, "Hitilafu: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
