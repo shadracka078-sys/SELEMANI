@@ -9,7 +9,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import com.example.ui.admin.AdminLoginScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,19 +19,15 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // Hapa tunatengeneza hali (state) ya kuangalia kama ameingia au bado
                     var isAdminLoggedIn by remember { mutableStateOf(false) }
 
                     if (!isAdminLoggedIn) {
-                        // Kama bado hajaingia, mnyeshee skrini ya PIN
                         AdminLoginScreen(
                             onLoginSuccess = {
                                 isAdminLoggedIn = true
                             }
                         )
                     } else {
-                        // Kama ameingia kwa mafanikio, kwa sasa tumwekee ujumbe wa Karibu kwenye Dashboard
-                        // Hapa baadaye tutaweka ile Dashboard ya Firestore inayovuta data za miamala
                         androidx.compose.foundation.layout.Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = androidx.compose.ui.Alignment.Center
