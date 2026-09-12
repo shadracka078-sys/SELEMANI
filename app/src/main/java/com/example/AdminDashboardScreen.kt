@@ -50,7 +50,7 @@ fun AdminDashboardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("SELEMANI ADMIN DASHBOARD") },
+                title = { Text("SELEMANI DASHBOARD") },
                 actions = {
                     TextButton(onClick = onLogout) {
                         Text("Toka", color = MaterialTheme.colorScheme.error)
@@ -65,9 +65,7 @@ fun AdminDashboardScreen(
                 .padding(paddingValues)
         ) {
             if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.padding(16.dp)
-                )
+                CircularProgressIndicator(modifier = Modifier.padding(16.dp))
             } else if (transactions.isEmpty()) {
                 Text(
                     text = "Hakuna miamala iliyopatikana kwenye Firestore bado.",
