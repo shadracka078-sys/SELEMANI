@@ -9,7 +9,7 @@ workflows:
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
       - name: Generate Gradle Wrapper
         script: |
-          gradle wrapper --gradle-version 8.5
+          gradle wrapper --gradle-version 9.3.1
       - name: Build Android APK
         script: |
           ./gradlew assembleDebug
