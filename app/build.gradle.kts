@@ -46,7 +46,9 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("release")
         }
-        debug { signingConfig = signingConfigs.getByName("debugConfig") }
+        debug { 
+            signingConfig = signingConfigs.getByName("debugConfig") 
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -56,7 +58,11 @@ android {
         compose = true
         buildConfig = true
     }
-    testOptions { unitTests { isIncludeAndroidResources = true } }
+    testOptions { 
+        unitTests { 
+            isIncludeAndroidResources = true 
+        } 
+    }
     dependenciesInfo {
         includeInApk = false
         includeInBundle = true
@@ -75,9 +81,9 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(platform(libs.firebase.bom))
     
-    // Firebase Core, Firestore na Auth
+    // Firebase Firestore na Authentication
     implementation(libs.firebase.firestore)
-    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-auth")
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material.icons.core)
