@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,18 +19,20 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    var isAdminLoggedIn by remember { mutableStateOf(false) }
+                    val auth = remember { FirebaseAuth.getInstance() }
+                    var currentUser by remember { mutableStateOf(auth.currentUser) }
 
-                    if (!isAdminLoggedIn) {
-                        AdminLoginScreen(
-                            onLoginSuccess = {
-                                isAdminLoggedIn = true
+                    if (currentUser == null) {
+                        AuthScreen(
+                            onAuthSuccess = {
+                                currentUser = auth.currentUser
                             }
                         )
                     } else {
                         AdminDashboardScreen(
                             onLogout = {
-                                isAdminLoggedIn = false
+                                auth.signOut()
+                                currentUser = null
                             }
                         )
                     }
