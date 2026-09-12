@@ -22,13 +22,8 @@ class MainActivity : ComponentActivity() {
                         var isLoggedIn by remember { mutableStateOf(false) }
 
                         if (isLoggedIn) {
-                            // HAPA: Tunaita Skrini yako Kuu ya Wakala badala ya AdminDashboardScreen
-                            WakalaHomeScreen(
-                                onLogout = {
-                                    isLoggedIn = false
-                                    Toast.makeText(this@MainActivity, "Umetoka kwenye akaunti", Toast.LENGTH_SHORT).show()
-                                }
-                            )
+                            // Hapa tunaita WakalaApp() badala ya WakalaHomeScreen()
+                            WakalaApp()
                         } else {
                             AuthScreen(
                                 onAuthSuccess = {
