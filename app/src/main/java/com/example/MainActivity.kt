@@ -9,6 +9,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import com.google.firebase.FirebaseApp
 
+// Import mafile yote ya UI yaliyopo kwenye folda ya ui
+import com.example.ui.*
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,8 +25,13 @@ class MainActivity : ComponentActivity() {
                         var isLoggedIn by remember { mutableStateOf(false) }
 
                         if (isLoggedIn) {
-                            // Hapa tunaita WakalaApp() badala ya WakalaHomeScreen()
-                            WakalaApp()
+                            // Hapa tunaonyesha AdminDashboardScreen kutoka kwenye ui folder
+                            AdminDashboardScreen(
+                                onLogout = {
+                                    isLoggedIn = false
+                                    Toast.makeText(this@MainActivity, "Umetoka kwenye akaunti", Toast.LENGTH_SHORT).show()
+                                }
+                            )
                         } else {
                             AuthScreen(
                                 onAuthSuccess = {
