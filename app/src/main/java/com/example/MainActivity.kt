@@ -6,7 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 
@@ -28,15 +27,11 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     } else {
-                        androidx.compose.foundation.layout.Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = androidx.compose.ui.Alignment.Center
-                        ) {
-                            Text(
-                                text = "KARIBU SELEMANI ADMIN DASHBOARD!",
-                                style = MaterialTheme.typography.titleLarge
-                            )
-                        }
+                        AdminDashboardScreen(
+                            onLogout = {
+                                isAdminLoggedIn = false
+                            }
+                        )
                     }
                 }
             }
