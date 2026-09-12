@@ -1,4 +1,4 @@
-package com.example
+package com.example.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -11,19 +11,13 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 
-enum class AuthMode { LOGIN, SIGN_UP, FORGOT_PASSWORD }
-
 @Composable
-fun AuthScreen(
-    onAuthSuccess: () -> Unit
-) {
-    val auth = remember { FirebaseAuth.getInstance() }
-    val context = LocalContext.current
-
-    var mode by remember { mutableStateOf(AuthMode.LOGIN) }
+fun AuthScreen(onLoginSuccess: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val auth = FirebaseAuth.getInstance()
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -37,117 +31,62 @@ fun AuthScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = when (mode) {
-                    AuthMode.LOGIN -> "SELEMANI WAKALA - LOGIN"
-                    AuthMode.SIGN_UP -> "SAJILI AKAUNTI MPYA"
-                    AuthMode.FORGOT_PASSWORD -> "REJESHA NENOSIRI"
-                },
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
+                text = "SELEMANI WAKALA - LOGIN",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 32.dp)
             )
-
-            Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Barua Pepe (Email)") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
 
-            if (mode != AuthMode.FORGOT_PASSWORD) {
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Nenosiri (Password)") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (isLoading) {
-                CircularProgressIndicator()
-            } else {
-                Button(
-                    onClick = {
-                        if (email.isBlank()) {
-                            Toast.makeText(context, "Weka Email tafadhali", Toast.LENGTH_SHORT).show()
-                            return@Button
-                        }
-
-                        isLoading = true
-                        when (mode) {
-                            AuthMode.LOGIN -> {
-                                auth.signInWithEmailAndPassword(email, password)
-                                    .addOnSuccessListener {
-                                        isLoading = false
-                                        onAuthSuccess()
-                                    }
-                                    .addOnFailureListener { e ->
-                                        isLoading = false
-                                        Toast.makeText(context, "Kosa: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                                    }
-                            }
-                            AuthMode.SIGN_UP -> {
-                                auth.createUserWithEmailAndPassword(email, password)
-                                    .addOnSuccessListener {
-                                        isLoading = false
-                                        Toast.makeText(context, "Akaunti imetengenezwa!", Toast.LENGTH_SHORT).show()
-                                        onAuthSuccess()
-                                    }
-                                    .addOnFailureListener { e ->
-                                        isLoading = false
-                                        Toast.makeText(context, "Kosa: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                                    }
-                            }
-                            AuthMode.FORGOT_PASSWORD -> {
-                                auth.sendPasswordResetEmail(email)
-                                    .addOnSuccessListener {
-                                        isLoading = false
-                                        Toast.makeText(context, "Link ya reset imetumwa kwenye email!", Toast.LENGTH_LONG).show()
-                                        mode = AuthMode.LOGIN
-                                    }
-                                    .addOnFailureListener { e ->
-                                        isLoading = false
-                                        Toast.makeText(context, "Kosa: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                                    }
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = when (mode) {
-                            AuthMode.LOGIN -> "Ingia (Log In)"
-                            AuthMode.SIGN_UP -> "Sajili Akaunti"
-                            AuthMode.FORGOT_PASSWORD -> "Tuma Link"
-                        }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Nenosiri (Password)") },
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    if (email.isBlank() || password.isBlank()) {
+                        Toast.makeText(context, "Tafadhali jaza email na password", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+                    
+                    isLoading = true
+                    auth.signInWithEmailAndPassword(email.trim(), password.trim())
+                        .addOnCompleteListener { task ->
+                            isLoading = false
+                            if (task.isSuccessful) {
+                                Toast.makeText(context, "Umeingia kwa mafanikio!", Toast.LENGTH_SHORT).show()
+                                onLoginSuccess()
+                            } else {
+                                val errorMessage = task.exception?.localizedMessage ?: "Imeshindikana kuingia"
+                                Toast.makeText(context, "Kosa: $errorMessage", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading
             ) {
-                if (mode == AuthMode.LOGIN) {
-                    TextButton(onClick = { mode = AuthMode.FORGOT_PASSWORD }) {
-                        Text("Umesahau Password?")
-                    }
-                    TextButton(onClick = { mode = AuthMode.SIGN_UP }) {
-                        Text("Sajili Akaunti")
-                    }
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
                 } else {
-                    TextButton(onClick = { mode = AuthMode.LOGIN }) {
-                        Text("Rudi Kuingia")
-                    }
+                    Text("Ingia (Log In)")
                 }
             }
         }
